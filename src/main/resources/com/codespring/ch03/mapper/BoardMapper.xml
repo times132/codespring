@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.codespring.ch03.mapper.BoardMapper">
+    <select id="getList" resultType="com.codespring.ch03.domain.BoardVO">
+        <![CDATA[
+        select * from tbl_board where bno > 0
+        ]]>
+    </select>
+
+    <insert id="insert">
+        insert into tbl_board (title, content, writer) values (#{title}, #{content}, #{writer})
+    </insert>
+
+    <insert id="insertSelectKey">
+        <selectKey keyProperty="bno" order="BEFORE" resultType="int">
+            select max(bno)+1 from tbl_board
+        </selectKey>
+
+        insert into tbl_board (bno, title, content, writer) values (#{bno}, #{title}, #{content}, #{writer})
+    </insert>
+
+    <select id="read" resultType="com.codespring.ch03.domain.BoardVO">
+        <![CDATA[
+        select * from tbl_board where bno = #{bno}
+        ]]>
+    </select>
+
+    <delete id="delete">
+        delete from tbl_board where bno = #{bno}
+    </delete>
+
+    <update id="update">
+        update tbl_board set title = #{title}, content = #{content}, writer = #{writer}, updatedate = CURRENT_DATE() where bno = #{bno}
+    </update>
+
+    <select id="getListWithPaging" resultType="com.codespring.ch03.domain.BoardVO">
+        <![CDATA[
+        select bno, title, content, writer, regdate, updatedate, replycnt
+        from tbl_board
+        ]]>
+        <include refid="search"/>
+        <![CDATA[
+        order by bno DESC, regdate DESC
+        LIMIT #{pageStart}, #{amount}
+        ]]>
+    </select>
+
+    <select id="getTotalCount" resultType="int">
+        select count(*) from tbl_board
+        <include refid="search"/>
+    </select>
+
+    <sql id="search">
+        <trim prefix="where (" suffix=")" prefixOverrides="OR">
+            <foreach item="type"  collection="typeArr">
+                <trim prefix="OR">
+                    <choose>
+                        <when test="type == 'T'.toString()">
+                            title like concat('%' , #{keyword} , '%')
+                        </when>
+                        <when test="type == 'C'.toString()">
+                            content like concat('%' , #{keyword} , '%')
+                        </when>
+                        <when test="type == 'W'.toString()">
+                            writer like concat('%' , #{keyword} , '%')
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </trim>
+    </sql>
+
+
+    <update id="updateReplyCnt">
+        update tbl_board set replycnt = replycnt + #{amount} where bno = #{bno}
+    </update>
+</mapper>
